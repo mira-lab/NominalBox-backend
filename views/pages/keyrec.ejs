@@ -1,0 +1,132 @@
+<script>
+  const bitcore=require('bitcore-lib');
+  var w3= new Web3('ws://94.130.94.163:8546');
+
+  const privateKey = 'abf758caead2b74629e96998a3fad4a927c5b3bc7faf436f481f9d954491a730';
+  var account = w3.eth.accounts.privateKeyToAccount('0x'+privateKey);
+  console.log(account);
+
+  const private_bn = bitcore.crypto.BN.fromString(privateKey);
+  const private = new bitcore.PrivateKey(private_bn);
+  private.toAddress().toString();
+  console.log("My compressed pub key",private.toPublicKey().toString());
+  var obj = private.toPublicKey().toObject();
+  obj.compressed=false;
+  var public = bitcore.PublicKey(obj).toString();
+  console.log("My uncompressed pub key:", public);
+
+
+
+
+  const abi=  [
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "openBox",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "string"
+        }
+      ],
+      "name": "PrivateKey",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [],
+      "name": "Open",
+      "type": "event"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_value",
+          "type": "string"
+        }
+      ],
+      "name": "publishPrivateKey",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "k",
+          "type": "string"
+        }
+      ],
+      "name": "setPublicKey",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getPublicKey",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ];
+
+  var miraKey = new w3.eth.Contract(abi, '0x036cdb6f937c3bd5b650598762f04ab9375c2ebe');
+
+
+  w3.eth.getBlockNumber()
+    .then((block) => {
+      miraKey.getPastEvents('PrivateKey',{fromBlock: 0, toBlock: block})
+        .then((eventlist) => {
+            if(eventlist.length>0) {
+  //            console.log("Mira already have private key:",.returnValues["_value"]);
+              console.log("Already have key");
+              return eventlist[0];
+            }
+            return new Promise(function(resolve, reject) {
+
+              miraKey.events.PrivateKey({'fromBlock': block},(err, event) =>{
+                if (err) {
+                  return reject(err)
+                }
+                return resolve(event);
+              })
+
+              //, (err,event) => console.log("Mira private key:",event.returnValues["_value"]));
+            })
+        })
+        .then((event) => console.log("Mira private key:",event.returnValues["_value"]));
+  })
+
+
+
+
+//  miraKey.events.PrivateKey((key) => console.log("Mira private key:",key));
+
+
+  console.log("Started");
+</script>

@@ -11,13 +11,19 @@
     "@types/express": "^4.16.0",
     "@types/node": "^10.7.0",
     "async": "2.0.1",
+    "bitcore-lib": "^0.15.0",
     "grunt": "1.0.1",
+    "install": "^0.12.1",
+    "jquery": "^3.3.1",
+    "npm": "^6.4.0",
     "sails": "^1.0.2",
     "sails-hook-grunt": "^3.0.2",
     "sails-hook-orm": "^2.0.0-16",
     "sails-hook-sockets": "^1.4.0",
+    "sjcl-all": "^1.0.1",
     "ts-node": "^7.0.1",
-    "typescript": "^3.0.1"
+    "typescript": "^3.0.1",
+    "web3": "^1.0.0-beta.35"
   },
   "devDependencies": {
     "@sailshq/eslint": "^4.19.3"

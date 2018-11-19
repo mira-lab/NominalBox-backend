@@ -1,0 +1,167 @@
+
+<script src="https://cdn.rawgit.com/alanhoff/node-sjcl-all/master/sjcl.js" ></script>
+<script>
+const bitcore=require('bitcore-lib');
+var w3= new Web3('ws://94.130.94.163:8546');
+
+// generate 2 random accounts
+
+const a1 = w3.eth.accounts.create();
+const private1 = 'ff36b02e4905648adce5a6a3712307707f4738bea0edc72601409a9cd706a039';// a1.privateKey.slice(2);
+console.log("Private key:",private1);
+const public1 = new bitcore.PrivateKey(bitcore.crypto.BN.fromString(private1,16)).toPublicKey();
+console.log("Public key:",public1.toString());
+var o1 = public1.toObject();
+o1.compressed = false;
+console.log("New pub key:",new bitcore.PublicKey(o1).toString())
+
+
+console.log("");
+
+const a2 = w3.eth.accounts.create();
+const private2 = '4b6cdc3ac3f2f82952c75f1cf0cd84d2e9965f0eaf304a71fd377a9dd185600d'; // a2.privateKey.slice(2);
+console.log("Private key:",private2);
+const public2 = new bitcore.PrivateKey(bitcore.crypto.BN.fromString(private2,16)).toPublicKey();
+console.log("Public key:",public2.toString());
+var o2 = public2.toObject();
+o2.compressed = false;
+console.log("New pub key:",new bitcore.PublicKey(o2).toString())
+//console.log("04"+ public2.toObject().x + public2.toObject().y);
+
+console.log("");
+
+const a3 = w3.eth.accounts.create();
+const private3 = a3.privateKey.slice(2);
+console.log("Private key:",private3);
+const public3 = new bitcore.PrivateKey(bitcore.crypto.BN.fromString(private3,16)).toPublicKey();
+console.log("Public key:",public3.toString());
+var o3 = public3.toObject();
+o3.compressed = false;
+console.log("New pub key:",new bitcore.PublicKey(o3).toString())
+
+
+
+/* --- start library ---- */
+
+
+/**
+ * Derive shared secret for given private and public keys.
+ * @param {Buffer} privateKeyA - Sender's private key (32 bytes)
+ * @param {Buffer} publicKeyB - Recipient's public key (65 bytes)
+ * @return {Promise.<Buffer>} A promise that resolves with the derived
+ * shared secret (Px, 32 bytes) and rejects on bad key.
+ */
+function derive(privateKeyA, publicKeyB) {
+  return new Promise(function(resolve) {
+
+    var secret_key = new sjcl.ecc.elGamal.secretKey(sjcl.ecc.curves.k256,
+      sjcl.ecc.curves.k256.field.fromBits(sjcl.codec.hex.toBits(privateKeyA)));
+
+    var pub = new sjcl.ecc.elGamal.publicKey(
+      sjcl.ecc.curves.k256,
+      sjcl.codec.hex.toBits(publicKeyB.slice(2))
+    );
+
+    resolve(sjcl.codec.hex.fromBits( secret_key.dhJavaEc(pub)));
+  });
+}
+
+
+function hmacSha256(key, msg) {
+  return crypto.createHmac("sha256", key).update(msg).digest();
+}
+
+
+
+/**
+ * Encrypt message for given recepient's public key.
+ * @param {Buffer} publicKeyTo - Recipient's public key (65 bytes)
+ * @param {Buffer} msg - The message being encrypted
+ * @param {?{?iv: Buffer, ?ephemPrivateKey: Buffer}} opts - You may also
+ * specify initialization vector (16 bytes) and ephemeral private key
+ * (32 bytes) to get deterministic results.
+ * @return {Promise.<Ecies>} - A promise that resolves with the ECIES
+ * structure on successful encryption and rejects on failure.
+ */
+var encrypt = function(publicKeyTo, msg, opts) {
+  opts = opts || {};
+  // Tmp variable to save context from flat promises;
+  var ephemPublicKey;
+  return new Promise(function(resolve) {
+    var ephemPrivateKey = opts.ephemPrivateKey ;
+    ephemPublicKey = getPublic(ephemPrivateKey);
+    resolve(derive(ephemPrivateKey, publicKeyTo));
+  }).then(function(Px) {
+    var hash = sha512(Px);
+    var iv = opts.iv ;
+    var encryptionKey = hash.slice(0, 16);
+    var macKey = hash.slice(32);
+    var ciphertext = aes256CbcEncrypt(iv, encryptionKey, msg);
+    var dataToMac = Buffer.concat([iv, ephemPublicKey, ciphertext]);
+    var mac = hmacSha256(macKey, dataToMac);
+    return {
+      iv: iv,
+      ephemPublicKey: ephemPublicKey,
+      ciphertext: ciphertext,
+      mac: mac
+    };
+  });
+};
+
+
+encrypt(new bitcore.PublicKey(o1).toString(),public3.toBuffer(), {iv: sjcl.random.randomWords(4),ephemPrivateKey: private2 })
+
+
+/**
+ * Decrypt message using given private key.
+ * @param {Buffer} privateKey - A 32-byte private key of recepient of
+ * the mesage
+ * @param {Ecies} opts - ECIES structure (result of ECIES encryption)
+ * @return {Promise.<Buffer>} - A promise that resolves with the
+ * plaintext on successful decryption and rejects on failure.
+ */
+//var decrypt = function(privateKey, opts) {
+//  return derive(privateKey, opts.ephemPublicKey).then(function(Px) {
+//    // console.log("px:",Px.toString('hex'));
+//    var kdfHash = crypto.createHash("sha256");
+//    // let ctrs = [(ctr >> 24) as u8, (ctr >> 16) as u8, (ctr >> 8) as u8, ctr as u8];
+//    // hasher.input(&ctrs);
+//    kdfHash.update(new Buffer('00000001','hex'));
+//    // hasher.input(secret);
+//    kdfHash.update(Px);
+//    // hasher.input(s1);
+//    kdfHash.update(new Buffer([]));
+//    // hasher.result(&mut dest[written..(written + 32)]);
+//    var key = kdfHash.digest();
+//    var ekey = key.slice(0,16);
+//    var mkey_material = key.slice(16,32);
+//    var mkey = sha256(mkey_material);
+//    var encryptionKey = ekey;
+//    var macKey = mkey;
+//    var dataToMac = Buffer.concat([
+//      opts.iv,
+//      // opts.ephemPublicKey,
+//      opts.ciphertext, new Buffer('0000','hex')
+//    ]);
+//    var realMac = hmacSha256(macKey, dataToMac);
+//    assert(equalConstTime(opts.mac, realMac), "Bad MAC");
+//    return aes128CbcDecrypt(opts.iv, encryptionKey, opts.ciphertext);
+//  });
+//};
+
+
+
+
+
+
+derive(private1,new bitcore.PublicKey(o2).toString())
+  .then(console.log)
+  .catch(console.error);
+
+
+derive(private2,new bitcore.PublicKey(o1).toString())
+  .then(console.log)
+  .catch(console.error);
+
+
+</script>

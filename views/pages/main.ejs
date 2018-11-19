@@ -1,0 +1,151 @@
+<script src="https://developers.ripple.com/assets/js/ripple-0.11.0-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-sdk/0.10.3/stellar-sdk.js"></script>
+
+<div>
+  Log of system
+</div>
+
+<div id="form">
+  <input type="button" onclick="get1License()" value="Get 1 license">
+
+</div>
+
+<div id="content">
+</div>
+
+<style>
+  .alert {
+    color: darkred;
+  }
+</style>
+
+<script>
+
+
+
+  const bitcore=require('bitcore-lib');
+  console.log(bitcore);
+
+  bitcore.Networks.add({
+    name: 'taras',
+    alias: 'tarasr',
+    pubkeyhash: 0x6f,
+    privatekey: 0xef,
+    scripthash: 0xc4,
+    xpubkey: 0x043587cf,
+    xprivkey: 0x04358394
+  });
+
+
+
+  bitcore.Networks.add({
+    name: 'litecoin',
+      alias: 'LTC',
+    pubkeyhash: 0x48,
+    privatekey: 0xb0,
+    scripthash: 0x05,
+    xpubkey:  0x0488b21e,
+    xprivkey: 0x0488ade4,
+//    networkMagic: BufferUtil.integerAsBuffer(0xfcc1b7dc),
+    port: 9333,
+    dnsSeeds: [
+    'dnsseed.litecointools.com',
+    'dnsseed.litecoinpool.org',
+    'dnsseed.ltc.xurious.com',
+    'dnsseed.koin-project.com',
+    'dnsseed.weminemnc.com'
+  ]
+  });
+
+
+  bitcore.Networks.add({
+    name: 'litecointestnet',
+    alias: 'tLTC',
+    pubkeyhash: 0x6f,
+    privatekey: 0xef,
+    scripthash: 0xc4,
+    xpubkey: 0x043587cf,
+    xprivkey: 0x04358394,
+//    networkMagic: BufferUtil.integerAsBuffer(0x0b110907),
+    port: 19333,
+    dnsSeeds: [
+      'testnet-seed.litecointools.com',
+      'testnet-seed.ltc.xurious.com'
+    ],
+  });
+
+
+  bitcore.Networks.add( {
+    name: 'bitcoincash',
+    alias: 'BCH',
+    prefix: 'bitcoincash',
+    pubkeyhash: 28,
+    privatekey: 0x80,
+    scripthash: 40,
+    xpubkey: 0x0488b21e,
+    xprivkey: 0x0488ade4,
+    port: 8333
+
+  });
+
+  // network magic, port, prefix, and dnsSeeds are overloaded by enableRegtest
+  bitcore.Networks.add({
+    name: 'bitcoincashtestnet',
+    alias: 'tBCH',
+    pubkeyhash: 0x6f,
+    privatekey: 0xef,
+    scripthash: 0xc4,
+    xpubkey: 0x043587cf,
+    xprivkey: 0x04358394,
+
+  });
+
+
+  var p1 = new bitcore.PrivateKey(bitcore.crypto.BN.fromString('e1f3be3e9d1f6f2169e6f182af508ce75a4a521a15627b32f03c183ea2c171e4','hex')).toPublicKey();
+  console.log("pub key:",p1.toString());
+  var p2 = p1.toObject();
+  p2.compressed = false;
+  p2 = new bitcore.PublicKey(p2);
+
+  console.log(p2.toString().slice(2));
+
+
+
+  console.log("address BTC:",bitcore.Address(p1,'mainnet').toString());
+  console.log("address LTC:",bitcore.Address(p1,'litecoin').toString());
+  console.log("address BCH:",bitcore.Address(p1,'bitcoincash').toString());
+  console.log("address XRP:",ripple.Account._publicKeyToAddress(p1.toString()));
+  console.log("address ETH:","0x"+Web3.utils.keccak256("0x"+p2.toString().slice(2)).slice(26));
+  console.log("address USDT:",bitcore.Address(p1,'mainnet').toString());
+
+  //  console.log("address XLM:",ripple.Account._publicKeyToAddress(p1.toString()));
+
+       //0x762d85f30C62CC6Cab1c867CD320350898f2B955
+
+
+
+
+//  EOS EOS
+//  Stellar Lumens XLM
+//  Cardano ADA
+//  IOTA MIOTA
+
+
+
+
+
+  function localLog(text, alert = false) {
+
+    $('#content').append('<p '+ ( alert? 'class="alert"': '' )+' >'+text+'</p>');
+
+  }
+  localLog('Start');
+
+
+  function get1License() {
+    localLog('request license');
+    $.ajax({'type':'POST', 'url':'/faucet/giveme', 'data': {'address': '0xab8C4D09F9183e38F96fA43877c67f0b0fD2310E'} })
+        .fail(function(jqXHR, textStatus) { localLog("Request failed: " + textStatus, true )})
+        .done(function(res) { localLog("Got license"+res ) })
+  }
+</script>

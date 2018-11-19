@@ -1,0 +1,229 @@
+<script src="https://cdn.rawgit.com/alanhoff/node-sjcl-all/master/sjcl.js" ></script>
+
+
+<script>
+
+  const bitcore=require('bitcore-lib');
+  var w3= new Web3('ws://94.130.94.163:8546');
+
+
+
+  const abi=  [
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "openBox",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "string"
+        }
+      ],
+      "name": "PrivateKey",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [],
+      "name": "Open",
+      "type": "event"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_value",
+          "type": "string"
+        }
+      ],
+      "name": "publishPrivateKey",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "k",
+          "type": "string"
+        }
+      ],
+      "name": "setPublicKey",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_receiver",
+          "type": "string"
+        }
+      ],
+      "name": "setReceiver",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_receiver",
+          "type": "string"
+        }
+      ],
+      "name": "UpdateReceiver",
+      "type": "event"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getPublicKey",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getReceiver",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ];
+
+
+
+
+
+
+  var mirabox=  {
+  'Version': '3.0-json',
+  'PrivateKey': 'abf758caead2b74629e96998a3fad4a927c5b3bc7faf436f481f9d954491a730',
+  'Items': [
+  //  {'currency': 'BTC', 'address': '',  'contract' : '' }
+  ]
+};
+
+
+  // Tempr
+  console.log(w3.eth.accounts.privateKeyToAccount('0x'+mirabox.PrivateKey).address.toString());
+
+
+  // TO DO: Use farm
+
+  function buyLicense() {
+
+    const contract = '0x55d880bdd2a33ad40e2dbeb61bd7148b1cf83a64';
+    const _contract = new w3.eth.Contract(abi, contract);
+    const public1 = new bitcore.PrivateKey(bitcore.crypto.BN.fromString(mirabox.PrivateKey,'hex')).toPublicKey().toObject();
+    public1.compressed = false;
+    const public_key = new bitcore.PublicKey(public1).toString();
+    console.log("New pub key:",public_key);
+
+    w3.eth.accounts.signTransaction({
+      to: contract,
+      value: Web3.utils.toWei('0'),
+      gas: 220000,
+      gasPrice: '1',
+      data: _contract.methods.setReceiver( public_key  ).encodeABI()
+
+    }, '0x'+mirabox.PrivateKey )
+      .then((tx) =>   w3.eth.sendSignedTransaction(tx.rawTransaction))
+      .then((tx2) => {
+
+          var item = {
+            'currency': 'BTC',
+            'address': '',
+            'pub_key': '',
+            'private_key': undefined,
+            'contract' : contract,
+            '_contract': _contract
+          };
+          console.log("Tx for set receiver:" + tx2);
+
+          mirabox.Items.push(item);
+
+
+          // Get pubkey
+          _contract.methods.getPublicKey().call()
+            .then((pubkey) =>{
+
+              item.pub_key = pubkey;
+              item.address = new bitcore.PublicKey(pubkey).toAddress().toString();
+              console.log("Got pubkey:",pubkey );
+            } );
+
+
+          // Get private key
+          w3.eth.getBlockNumber()
+            .then((block) => {
+              _contract.getPastEvents('PrivateKey',{fromBlock: 0, toBlock: block})
+                .then((eventlist) => {
+                  if(eventlist.length>0) {
+                    console.log("Already have key");
+                    return eventlist[0];
+                  }
+
+                  return new Promise(function(resolve, reject) {
+                    _contract.events.PrivateKey({'fromBlock': block},(err, event) =>{
+                      if (err) {
+                        return reject(err)
+                      }
+                      return resolve(event);
+                    })
+
+                    //, (err,event) => console.log("Mira private key:",event.returnValues["_value"]));
+                  })
+                })
+                .then((event) => {
+                    console.log("Mira private key:",event.returnValues["_value"]);
+
+                  var secret_key = new sjcl.ecc.elGamal.secretKey(sjcl.ecc.curves.k256,
+                    sjcl.ecc.curves.k256.field.fromBits(sjcl.codec.hex.toBits(mirabox.PrivateKey)));
+
+                    item.private_key = sjcl.decrypt(secret_key,event.returnValues["_value"]);
+                });
+            })
+        }
+      )
+      .catch(console.error);
+
+  }
+
+  buyLicense();
+
+</script>

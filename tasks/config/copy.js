@@ -18,7 +18,15 @@ module.exports = function(grunt) {
         cwd: './assets',
         src: ['**/*.!(coffee|less)'],
         dest: '.tmp/public'
-      }]
+      },
+      {
+        expand: true,
+        cwd: './node_modules/jquery/dist/',
+        src: ['jquery.min.js'],
+        dest: './assets/vendor/jquery'
+      },
+
+      ]
     },
     build: {
       files: [{

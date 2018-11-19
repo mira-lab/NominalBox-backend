@@ -25,8 +25,27 @@ module.exports.routes = {
   ***************************************************************************/
 
   '/': {
-    view: 'pages/homepage'
+    view: 'pages/main'
   },
+
+  '/keyrec': {
+    view: 'pages/keyrec'
+  },
+
+  '/bitcore': {
+    view: 'pages/bitcore'
+  },
+
+  '/mirabox': {
+    view: 'pages/mirabox'
+  },
+
+
+  '/faucet/get': 'FaucetController.get',
+  '/faucet/status': 'FaucetController.status',
+  '/faucet/contract': 'FaucetController.contract',
+  '/faucet/giveme': 'FaucetController.giveme',
+
 
   /***************************************************************************
   *                                                                          *

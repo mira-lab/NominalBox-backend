@@ -20,6 +20,130 @@ setTimeout(function sunrise () {
     <h1 id="main-title" class="container"><%= __('A brand new app.') %></h1>
     <h3 class="container">You're looking at: <code><%= view.pathFromApp + '.' +view.ext %></code></h3>
   </div>
+
+<script>
+
+  var w3= new Web3('ws://94.130.94.162:8546');
+  var account = w3.eth.accounts.privateKeyToAccount('0xabf758caead2b74629e96998a3fad4a927c5b3bc7faf436f481f9d954491a730');
+
+  console.log(account);
+//  w3.eth.getBalance(account.address)
+//    .then(console.log);
+
+
+//  w3.eth.subscribe('logs', {'address': account.address} , console.log);
+
+
+//  var s1 = w3.eth.subscribe('pendingTransactions', function(error, result){
+//    if (!error) {
+//      console.log("Result")
+//      console.log(result);
+//    } else {
+//      console.error(error);
+//    }
+//  })
+//    .on("data", function(transaction){
+//      console.log("pending");
+//      console.log(transaction);
+//    });
+
+
+//  var subscription = w3.eth.subscribe('newBlockHeaders', function(error, result){
+//    if (!error) {
+//      console.log(result);
+//
+//      return;
+//    }
+//
+//    console.error(error);
+//  })
+//    .on("data", function(blockHeader){
+//      console.log(blockHeader);
+//    })
+//    .on("error", console.error);
+//
+//  // unsubscribes the subscription
+//  subscription.unsubscribe(function(error, success){
+//    if (success) {
+//      console.log('Successfully unsubscribed!');
+//    }
+//  });
+
+  const jsonInterface=  [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_value",
+          "type": "int256"
+        }
+      ],
+      "name": "foo",
+      "outputs": [
+        {
+          "name": "",
+          "type": "int256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "int256"
+        }
+      ],
+      "name": "ReturnValue",
+      "type": "event"
+    }
+  ];
+
+  var myContract = new w3.eth.Contract(jsonInterface, '0x85467c5b4f59a0ea95202e3a704d5710dcdb32bd');
+
+  myContract.events.ReturnValue(console.log);
+
+//  var subscription = w3.eth.subscribe('logs', {
+//    address:  '0x85467c5b4f59a0ea95202e3a704d5710dcdb32bd',
+//      fromBlock: 0,
+//      toBlock: 'latest',
+////    topics: [ account.address, ]
+//  }, function(error, result){
+//    if (!error) {
+//      console.log("handler:",result);
+//    } else {
+//      console.error(error);
+//    }
+//  })
+//    .on("data", function(log){
+//
+//      console.log("data:",log);
+//    })
+//    .on("changed", function(log){
+//      console.log('changed');
+//    });
+
+//  w3.eth.getTransaction('0xfda0228c8f346086442fd39b74bde69d3321e104067778ffdf0ecbd79e3ac375').then(console.log).catch(console.error)
+
+
+  $(document).ready(function(){ /*code here*/
+
+  $('#e').text('Test');
+
+
+  })
+
+</script>
+  <h1> Hello world <span id="e"></span></h1>
   <div class="main container clearfix">
     <ul class="getting-started">
       <li class="clearfix first">
